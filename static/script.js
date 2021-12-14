@@ -96,7 +96,7 @@ function getTime() {
         endTime()
     }
     else
-        return Math.floor(60-((new Date() - startTime)/1000))
+        return Math.floor(20-((new Date() - startTime)/1000))
 }
 
 renderQuote()
