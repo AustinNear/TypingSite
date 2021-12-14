@@ -72,7 +72,8 @@ def signup():
                          password=bcrypt.generate_password_hash(form.password.data).decode('UTF-8'))
         db.session.add(new_user)
         db.session.commit()
-        return '<h1> New user has been created</h1>'
+        form = RegisterForm()
+        return render_template('login.html', form=form, message=" to your newly created account")
     return render_template('signup.html', form=form)
 
 
@@ -108,17 +109,26 @@ def logout():
 
 @app.route('/stats')
 def stats():
-    theuser = users.query.filter_by(username=session['name']).first()
-    userid = theuser.id
-    teststaken = wpms.query.filter_by(user_id=userid)
-    count = 0
-    words = 0
-    for test in teststaken:
-        count = count + 1
-        words = words + test.wpm
-    avgwpm = words / count
-    return render_template('stats.html', avgwpm=avgwpm, teststaken=count)
-
+    if session.get("name"):
+        theuser = users.query.filter_by(username=session['name']).first()
+        userid = theuser.id
+        teststaken = wpms.query.filter_by(user_id=userid)
+        count = 0
+        words = 0
+        maxwpm = 0
+        for test in teststaken:
+            count = count + 1
+            words = words + test.wpm
+            if test.wpm > maxwpm:
+                maxwpm = test.wpm
+        if count is 0:
+            return render_template('stats.html', avgwpm="None", teststaken="None", maxwpm="None")
+        avgwpm = words / count
+        return render_template('stats.html', avgwpm=avgwpm, teststaken=count, maxwpm=maxwpm)
+    else:
+            form = RegisterForm()
+            return render_template('login.html', form=form, message=" before accessing the stats.")
+# add highest wpm
 
 if __name__ == '__main__':
     app.run(debug=True)
