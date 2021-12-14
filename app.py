@@ -14,18 +14,19 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
 
-class User(db.Model):
+class users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(15), unique=True)
-    email = db.Column(db.String(50), unique=True)
-    password = db.Column(db.String(80))
-    wpm = db.relationship('Wpms', backref='user', lazy=True)
+    username = db.Column(db.String, unique=True)
+    email = db.Column(db.String, unique=True)
+    password = db.Column(db.String)
+    wpm_rel = db.relationship("wpms", back_populates="user_rel")
 
 
-class WPMs(db.Model):
+class wpms(db.Model):
     wpmid = db.Column(db.Integer, primary_key=True)
-    wpm = db.Column(db.Integer, unique=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    wpm = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_rel = db.relationship("users", back_populates="wpm_rel")
 
 
 class LoginForm(FlaskForm):
@@ -54,7 +55,7 @@ def index():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        user = users.query.filter_by(username=form.username.data).first()
         if user:
             if bcrypt.check_password_hash(user.password, form.password.data):
                 session["name"] = form.username.data
@@ -67,8 +68,8 @@ def login():
 def signup():
     form = RegisterForm()
     if form.validate_on_submit():
-        new_user = User(username=form.username.data, email=form.email.data,
-                        password=bcrypt.generate_password_hash(form.password.data).decode('UTF-8'))
+        new_user = users(username=form.username.data, email=form.email.data,
+                         password=bcrypt.generate_password_hash(form.password.data).decode('UTF-8'))
         db.session.add(new_user)
         db.session.commit()
         return '<h1> New user has been created</h1>'
@@ -80,7 +81,7 @@ def dashboard():
     return render_template('dashboard.html')
 
 
-@app.route('/type')
+@app.route('/type', methods=['GET', 'POST'])
 def type():
     if session.get("name"):
         return render_template('type.html')
@@ -89,11 +90,34 @@ def type():
         return render_template('login.html', form=form, message=" before accessing the test.")
 
 
+@app.route('/type/<wpmjs>', methods=['GET', 'POST'])
+def typewpm(wpmjs):
+    theuser = users.query.filter_by(username=session['name']).first()
+    new_wpm = wpms(wpm=int(wpmjs) / 4, user_id=theuser.id)
+    db.session.add(new_wpm)
+    db.session.commit()
+    return render_template('type.html')
+
+
 @app.route('/logout')
 def logout():
     if session.get("name"):
         del session["name"]
     return render_template('index.html', name="Guest")
+
+
+@app.route('/stats')
+def stats():
+    theuser = users.query.filter_by(username=session['name']).first()
+    userid = theuser.id
+    teststaken = wpms.query.filter_by(user_id=userid)
+    count = 0
+    words = 0
+    for test in teststaken:
+        count = count + 1
+        words = words + test.wpm
+    avgwpm = words / count
+    return render_template('stats.html', avgwpm=avgwpm, teststaken=count)
 
 
 if __name__ == '__main__':

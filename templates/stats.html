@@ -23,24 +23,30 @@ Type
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
+              <li><a href="{{ url_for('index') }}">Home</a></li>
             <li><a href="{{ url_for('login') }}">Login</a></li>
             <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
               <li><a href="{{ url_for('type') }}">Take Test</a></li>
               <li><a href="http://127.0.0.1:5000/logout">Logout</a></li>
-              <li><a href="{{ url_for('stats') }}">Stats</a></li>
+              <li class="active"><a href="#">Stats</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
-
     <div class="container">
-
-      <div class="starter-template">
-        <h1>Typing Test</h1>
-        <p class="lead" id="quote">Sign up for an account then login to take tests.<br></p>
-          {{ name }}
-      </div>
-
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Average WPM</th>
+              <td id="avgwpmID">{{ avgwpm }}</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Tests Taken</th>
+              <td id="teststakenID">{{ teststaken }}</td>
+            </tr>
+          </tbody>
+        </table>
     </div><!-- /.container -->
 {% endblock %}

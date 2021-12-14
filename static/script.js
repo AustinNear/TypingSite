@@ -82,6 +82,12 @@ function endTime(){
         inputElement.setAttribute("readonly", "")
         clearInterval(intervalID)
         flag = 1
+        const xhttp = new XMLHttpRequest()
+        xhttp.onload = function() {
+            wpm = this.responseText;
+        }
+        xhttp.open("POST", "/type/"+wpm, true)
+        xhttp.send()
     }
 }
 
@@ -90,7 +96,7 @@ function getTime() {
         endTime()
     }
     else
-        return Math.floor(60-((new Date() - startTime)/1000))
+        return Math.floor(10-((new Date() - startTime)/1000))
 }
 
 renderQuote()
