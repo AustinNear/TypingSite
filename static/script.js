@@ -3,8 +3,10 @@ const displayElement = document.getElementById('displayID')
 const inputElement = document.getElementById('inputID')
 const timerElement = document.getElementById('timerID')
 const wpmElement = document.getElementById('wpmID')
+let wpq = 0
 let wpm = 0
-const averagewordlength = 5
+let flag = 0
+const averagewordlength = 4
 inputElement.addEventListener('input', ()=>{
     const quotearray = displayElement.querySelectorAll('span')
     const value = inputElement.value.split('')
@@ -14,6 +16,8 @@ inputElement.addEventListener('input', ()=>{
     }
 
     let correct = true
+    wpq = 0
+
     quotearray.forEach((characterSpan, index)=>{
         const character = value[index]
         if(character == null){
@@ -24,7 +28,7 @@ inputElement.addEventListener('input', ()=>{
         else if(character === characterSpan.innerText) {
             characterSpan.classList.add('correct')
             characterSpan.classList.remove('incorrect')
-            wpm++
+            wpq++
         }
         else{
             characterSpan.classList.add('incorrect')
@@ -38,7 +42,8 @@ inputElement.addEventListener('input', ()=>{
 })
 
 function getQuote(){
-   return fetch(RANDOM_QUOTE)
+    wpm += wpq
+    return fetch(RANDOM_QUOTE)
         .then(response=>response.json())
         .then(data=>data.content)
 }
@@ -57,6 +62,7 @@ async function renderQuote(){
 let startTime
 let intervalID
 function startTimer(){
+    flag = 0
     timerElement.innerText = "60"
     timerElement.setAttribute('aria-valuenow', '60')
     timerElement.setAttribute('width', '100')
@@ -66,17 +72,25 @@ function startTimer(){
         let pcg = Math.floor(timerElement.innerText/60*100)
         timerElement.setAttribute('aria-valuenow', pcg)
         timerElement.setAttribute('style','width:'+Number(pcg)+'%')
-        wpmElement.innerText= wpm
-    }, 1000)
+    }, 500)
+}
+
+function endTime(){
+    if(flag == 0) {
+        wpm += wpq
+        wpmElement.innerText = Math.floor(wpm/averagewordlength)
+        inputElement.setAttribute("readonly", "")
+        clearInterval(intervalID)
+        flag = 1
+    }
 }
 
 function getTime() {
     if(timerElement.innerText == 0){
-        clearInterval(intervalID)
-        inputElement.setAttribute("readonly", "")
-        wpmElement.innerText= wpm
+        endTime()
     }
-    return Math.floor(60-((new Date() - startTime)/1000))
+    else
+        return Math.floor(60-((new Date() - startTime)/1000))
 }
 
 renderQuote()

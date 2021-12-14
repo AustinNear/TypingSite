@@ -19,6 +19,13 @@ class User(db.Model):
     username = db.Column(db.String(15), unique=True)
     email = db.Column(db.String(50), unique=True)
     password = db.Column(db.String(80))
+    wpm = db.relationship('Wpms', backref='user', lazy=True)
+
+
+class WPMs(db.Model):
+    wpmid = db.Column(db.Integer, primary_key=True)
+    wpm = db.Column(db.Integer, unique=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
 class LoginForm(FlaskForm):
