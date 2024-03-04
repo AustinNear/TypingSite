@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session
+from flask import Flask, render_template, redirect, url_for, session, current_app
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField
@@ -41,7 +41,9 @@ class RegisterForm(FlaskForm):
     password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
 
 
-db.create_all()
+# Ensure database creation is within the application context
+with app.app_context():
+    db.create_all()
 
 
 @app.route('/')
@@ -70,8 +72,9 @@ def signup():
     if form.validate_on_submit():
         new_user = users(username=form.username.data, email=form.email.data,
                          password=bcrypt.generate_password_hash(form.password.data).decode('UTF-8'))
-        db.session.add(new_user)
-        db.session.commit()
+        with current_app.app_context():
+            db.session.add(new_user)
+            db.session.commit()
         form = RegisterForm()
         return render_template('login.html', form=form, message=" to your newly created account")
     return render_template('signup.html', form=form)
@@ -93,11 +96,16 @@ def type():
 
 @app.route('/type/<wpmjs>', methods=['GET', 'POST'])
 def typewpm(wpmjs):
-    theuser = users.query.filter_by(username=session['name']).first()
-    new_wpm = wpms(wpm=int(wpmjs) / 4, user_id=theuser.id)
-    db.session.add(new_wpm)
-    db.session.commit()
-    return render_template('type.html')
+    if session.get("name"):
+        with current_app.app_context():
+            theuser = users.query.filter_by(username=session['name']).first()
+            new_wpm = wpms(wpm=int(wpmjs) / 4, user_id=theuser.id)
+            db.session.add(new_wpm)
+            db.session.commit()
+        return render_template('type.html')
+    else:
+        form = RegisterForm()
+        return render_template('login.html', form=form, message=" before accessing the test.")
 
 
 @app.route('/logout')
@@ -121,14 +129,13 @@ def stats():
             words = words + test.wpm
             if test.wpm > maxwpm:
                 maxwpm = test.wpm
-        if count is 0:
+        if count == 0:
             return render_template('stats.html', avgwpm="None", teststaken="None", maxwpm="None")
         avgwpm = words / count
         return render_template('stats.html', avgwpm=avgwpm, teststaken=count, maxwpm=maxwpm)
     else:
-            form = RegisterForm()
-            return render_template('login.html', form=form, message=" before accessing the stats.")
-# add highest wpm
+        form = RegisterForm()
+        return render_template('login.html', form=form, message=" before accessing the stats.")
 
 if __name__ == '__main__':
     app.run(debug=True)
